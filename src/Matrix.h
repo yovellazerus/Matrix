@@ -11,21 +11,33 @@
 
 typedef struct Matrix_t Matrix;
 
+// Printing and debuging
 void Matrix_error(const char* msg);
+void Matrix_dump(Matrix* mat, FILE* file, const char* name);
 
+// Memory memory management
 Matrix* Matrix_create(double* carr, size_t rows, size_t colls);
 void Matrix_destroy(Matrix* mat);
 Matrix* Matrix_copy(Matrix* mat);
 
+// Creating special matrices
 Matrix* Matrix_I(size_t n);
 Matrix* Matrix_scalar(size_t n, double alpha);
+Matrix* Matrix_dig(Matrix* vec);
 Matrix* Matrix_noise(size_t rows, size_t colls, double from, double to);
 
+// Get's and set's
 size_t Matrix_getRows(Matrix* mat);
 size_t Matrix_getColls(Matrix* mat);
 double* Matrix_at(Matrix* mat, size_t i, size_t j);
-void Matrix_dump(Matrix* mat, FILE* file, const char* name);
+Matrix* Matrix_getDig(Matrix* mat);
 
+// Row operations
+void Matrix_swap_rows(Matrix* mat, size_t i, size_t j);
+void Matrix_scale_row(Matrix* mat, size_t row, double alpha);
+void Matrix_add_row_to_row(Matrix* mat, size_t i, size_t j);
+
+// Basic operations and arithmetic
 Matrix* Matrix_add(Matrix* a, Matrix* b);
 Matrix* Matrix_sub(Matrix* a, Matrix* b);
 Matrix* Matrix_scale(Matrix* mat, double alpha);
@@ -33,6 +45,7 @@ Matrix* Matrix_dot(Matrix* a, Matrix* b);
 Matrix* Matrix_transpose(Matrix* mat);
 Matrix* Matrix_minor(Matrix* mat, size_t i, size_t j);
 
+// Advanced operations
 Matrix* Matrix_adj(Matrix* mat);
 double Matrix_det(Matrix* mat);
 Matrix* Matrix_inv(Matrix* mat);

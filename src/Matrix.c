@@ -1,6 +1,34 @@
 
 #include "Matrix.h"
 
+typedef enum {
+    COLOR_RESET = 0,
+    COLOR_RED,
+    COLOR_GREEN,
+    COLOR_YELLOW,
+    COLOR_BLUE,
+    COLOR_MAGENTA,
+    COLOR_CYAN,
+    COLOR_WHITE
+} Color;
+
+static void set_color(Color color, FILE* file) {
+    if(!file){
+        file = stdout;
+    }
+    switch (color) {
+        case COLOR_RED:     fprintf(file, "\033[0;31m"); break;
+        case COLOR_GREEN:   fprintf(file, "\033[0;32m"); break;
+        case COLOR_YELLOW:  fprintf(file, "\033[0;33m"); break;
+        case COLOR_BLUE:    fprintf(file, "\033[0;34m"); break;
+        case COLOR_MAGENTA: fprintf(file, "\033[0;35m"); break;
+        case COLOR_CYAN:    fprintf(file, "\033[0;36m"); break;
+        case COLOR_WHITE:   fprintf(file, "\033[0;37m"); break;
+        case COLOR_RESET:
+        default:            fprintf(file, "\033[0m");    break;
+    }
+}
+
 static double randomInRange(double from, double to){
     if(from >= to){
         return 0.0;
@@ -26,7 +54,9 @@ void Matrix_error(const char *msg)
     if(!msg){
         msg = "Unknown error";
     }
+    set_color(COLOR_RED, stderr);
     fprintf(stderr, "ERROR: %s.\n", msg);
+    set_color(COLOR_RESET, stderr);
     exit(1);
 }
 
@@ -125,6 +155,43 @@ Matrix *Matrix_scalar(size_t n, double alpha)
     return res;
 }
 
+Matrix *Matrix_dig(Matrix *vec)
+{
+    if(!vec){
+        return NULL;
+    }
+    if(vec->rows != 1 && vec->colls != 1){
+        Matrix_error("can not make a diagonal matrix from a non flat-matrix (non vector)");
+        return NULL;
+    }
+    size_t n = 0;
+    bool row_vec = false;
+    if(vec->rows != 1){
+        n = vec->rows;
+    }
+    else{
+        n = vec->colls;
+        row_vec = true;
+    }
+    Matrix* res = Matrix_create(NULL, n, n);
+    if(!res){
+        return NULL;
+    }
+    for(int i = 1; i <= n; i++){
+        for(int j = 1; j <= n; j++){
+            if(i == j){
+                if(row_vec) {
+                    *Matrix_at(res, i, j) = *Matrix_at(vec, 1, j);
+                }
+                else{
+                    *Matrix_at(res, i, j) = *Matrix_at(vec, i, 1);
+                }
+            } 
+        }
+    }
+    return res;
+}
+
 Matrix *Matrix_noise(size_t rows, size_t colls, double from, double to)
 {
     srand(time(NULL));
@@ -169,6 +236,27 @@ double *Matrix_at(Matrix *mat, size_t i, size_t j)
         return NULL;
     }
     return &(mat->data[(i - 1) * (mat->colls) + (j - 1)]);
+}
+
+Matrix *Matrix_getDig(Matrix *mat)
+{
+    if(!mat){
+        return NULL;
+    }
+    if(mat->rows != mat->colls){
+        Matrix_error("can not get diagonal of non square matrix");
+        return NULL;
+    }
+    Matrix* res = Matrix_create(NULL, 1, mat->colls);
+    if(!res){
+        return NULL;
+    }
+    for(int i = 1; i <= mat->rows; i++){
+        for(int j = 1; j <= mat->colls; j++){
+            if(i == j) *Matrix_at(res, 1, j) = *Matrix_at(mat, i, j);
+        }
+    }
+    return res;
 }
 
 void Matrix_dump(Matrix *mat, FILE *file, const char *name)

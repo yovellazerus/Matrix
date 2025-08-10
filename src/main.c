@@ -102,6 +102,61 @@ int main(int argc, char* argv[]){
     Matrix_destroy(m_det);
     Matrix_destroy(m_det_inv);
     Matrix_destroy(m_det_again);
+
+    double arr4[] = {
+        1, 2, 3, 4,
+        1, 0.5, 3, 4,
+        1, 2, 3.14, 4,
+        1, 2, 3, 4.76,
+    };
+    Matrix* m4 = Matrix_create(arr4, 4, 4);
+    Matrix* dig = Matrix_getDig(m4);
+    MATRIX_DUMP(dig, NULL);
+    Matrix_destroy(m4);
+    Matrix_destroy(dig);
+
+    double arr5[] = {
+        1, 2, 3, 4, 
+    };
+    Matrix* vec1 = Matrix_create(arr5, 1, 4);
+    Matrix* m5 = Matrix_dig(vec1);
+    MATRIX_DUMP(m5, NULL);
+    Matrix_destroy(m5);
+    Matrix_destroy(vec1);
+
+    double arr6[] = {
+        4,
+        3,
+        2,
+        1, 
+    };
+    Matrix* vec2 = Matrix_create(arr6, 4, 1);
+    Matrix* m6 = Matrix_dig(vec2);
+    MATRIX_DUMP(m6, NULL);
+    Matrix_destroy(m6);
+    Matrix_destroy(vec2);
+
+    Matrix* noise1 = Matrix_noise(5, 5, -2, 2);
+    Matrix* noise1_inv = Matrix_inv(noise1);
+    Matrix* noise1_again = Matrix_dot(noise1, noise1_inv);
+    MATRIX_DUMP(noise1, NULL);
+    MATRIX_DUMP(noise1_inv, NULL);
+    MATRIX_DUMP(noise1_again, NULL);
+    Matrix_destroy(noise1);
+    Matrix_destroy(noise1_inv);
+    Matrix_destroy(noise1_again);
     
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
