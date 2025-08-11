@@ -49,17 +49,6 @@ struct Matrix_t {
     size_t colls;
 };
 
-void Matrix_error(const char *msg)
-{
-    if(!msg){
-        msg = "Unknown error";
-    }
-    set_color(COLOR_RED, stderr);
-    fprintf(stderr, "ERROR: %s.\n", msg);
-    set_color(COLOR_RESET, stderr);
-    exit(1);
-}
-
 Matrix *Matrix_create(double *carr, size_t rows, size_t colls)
 {
     if(rows == 0 || colls == 0){
@@ -161,7 +150,7 @@ Matrix *Matrix_dig(Matrix *vec)
         return NULL;
     }
     if(vec->rows != 1 && vec->colls != 1){
-        Matrix_error("can not make a diagonal matrix from a non flat-matrix (non vector)");
+        MATRIX_ERROR("can not make a diagonal matrix from a non flat-matrix (non vector)");
         return NULL;
     }
     size_t n = 0;
@@ -229,7 +218,7 @@ size_t Matrix_getColls(Matrix *mat)
 double *Matrix_at(Matrix *mat, size_t i, size_t j)
 {
     if(i == 0 || i > mat->rows || j == 0 || j > mat-> colls){
-        Matrix_error("Indexing error, index out of range");
+        MATRIX_ERROR("Indexing error, index out of range");
         return NULL;
     }
     if(!mat){
@@ -244,7 +233,7 @@ Matrix *Matrix_getDig(Matrix *mat)
         return NULL;
     }
     if(mat->rows != mat->colls){
-        Matrix_error("can not get diagonal of non square matrix");
+        MATRIX_ERROR("can not get diagonal of non square matrix");
         return NULL;
     }
     Matrix* res = Matrix_create(NULL, 1, mat->colls);
@@ -257,6 +246,69 @@ Matrix *Matrix_getDig(Matrix *mat)
         }
     }
     return res;
+}
+
+void Matrix_swap_rows(Matrix *mat, size_t i, size_t j)
+{
+    if(!mat){
+        return;
+    }
+    if(i <= 0 || i > mat->rows || j <= 0 || j > mat->rows){
+        MATRIX_ERROR("invalid selection of rows to replace");
+        return;
+    }
+
+    double* row_i = (double*)malloc(sizeof(*row_i) * mat->colls);
+    if(!row_i){
+        return;
+    }
+    for(int k = 0; k < mat->colls; k++){
+        row_i[k] = *Matrix_at(mat, i, k+1);
+    }
+    double* row_j = (double*)malloc(sizeof(*row_j) * mat->colls);
+    if(!row_j){
+        free(row_i);
+        return;
+    }
+    for(int k = 0; k < mat->colls; k++){
+        row_j[k] = *Matrix_at(mat, j, k+1);
+    }
+    for(int k = 0; k < mat->colls; k++){
+        *Matrix_at(mat, j, k+1) = row_i[k];
+    }
+    for(int k = 0; k < mat->colls; k++){
+        *Matrix_at(mat, i, k+1) = row_j[k];
+    }
+    free(row_i);
+    free(row_j);
+}
+
+void Matrix_scale_row(Matrix *mat, size_t row, double alpha)
+{
+    if(!mat){
+        return;
+    }
+    if(row <= 0 || row > mat->rows){
+        MATRIX_ERROR("attempting to change a row that does not exist in the matrix");
+        return;
+    }
+    for(int j = 0; j < mat->colls; j++){
+        *Matrix_at(mat, row, j+1) *= alpha; 
+    }
+}
+
+void Matrix_add_row_to_row(Matrix *mat, size_t from, size_t to)
+{
+    if(!mat){
+        return;
+    }
+    if(from <= 0 || from > mat->rows || to <= 0 || to > mat->rows){
+        MATRIX_ERROR("invalid selection of rows to add to each other");
+        return;
+    }
+    for(int j = 1; j <= mat->colls; j++){
+        *Matrix_at(mat, to, j) += *Matrix_at(mat, from, j);
+    }
 }
 
 void Matrix_dump(Matrix *mat, FILE *file, const char *name)
@@ -278,7 +330,7 @@ void Matrix_dump(Matrix *mat, FILE *file, const char *name)
     for(int i = 1; i <= mat->rows; i++){
         fprintf(file, "\n");
         for(int j = 1; j <= mat->colls; j++){
-            fprintf(file, "\t%.4lf", *Matrix_at(mat, i, j));
+            fprintf(file, "\t%.2lf", *Matrix_at(mat, i, j));
         }
     }
 
@@ -292,7 +344,7 @@ Matrix *Matrix_add(Matrix *a, Matrix *b)
         return NULL;
     }
     if(a->rows != b->rows || a->colls != b->colls){
-        Matrix_error("Dimension error, Matrix dimensions not suitable for adding and subtracting");
+        MATRIX_ERROR("Dimension error, Matrix dimensions not suitable for adding and subtracting");
         return NULL;
     }
     Matrix* res = Matrix_create(NULL, a->rows, a->colls);
@@ -335,7 +387,7 @@ Matrix *Matrix_dot(Matrix *a, Matrix *b)
         return NULL;
     }
     if(a->colls != b->rows){
-        Matrix_error("Dimension error, Matrix dimensions not suitable for dot multiplication");
+        MATRIX_ERROR("Dimension error, Matrix dimensions not suitable for dot multiplication");
         return NULL;
     }
     size_t n = a->rows;
@@ -378,11 +430,11 @@ Matrix *Matrix_minor(Matrix *mat, size_t i, size_t j)
         return NULL;
     }
     if(i == 0 || i > mat->rows || j == 0 || j > mat-> colls){
-        Matrix_error("Indexing error, index out of range");
+        MATRIX_ERROR("Indexing error, index out of range");
         return NULL;
     }
     if(mat->rows != mat->colls){
-        Matrix_error("minor is not define for non square matrixes");
+        MATRIX_ERROR("minor is not define for non square matrixes");
         return NULL;
     }
     size_t n = mat->rows;
@@ -415,7 +467,7 @@ Matrix *Matrix_adj(Matrix *mat)
         return NULL;
     }
     if(mat->rows != mat-> rows){
-        Matrix_error("adj is not define for non square matrixes");
+        MATRIX_ERROR("adj is not define for non square matrixes");
         return NULL;
     }
     size_t n = mat->rows;
@@ -446,9 +498,24 @@ double Matrix_det(Matrix *mat)
         return 0.0;
     }
     if(mat->rows != mat->colls){
-        Matrix_error("determinant is not define for non square matrixes");
+        MATRIX_ERROR("determinant is not define for non square matrixes");
         return 0.0;
     }
+
+    // Gaussian method, time complexity: O(n^3)
+    Matrix* copy = Matrix_copy(mat);
+    if(!copy){
+        return 0.0;
+    }
+    double det_factor = Matrix_gaussian_elimination(copy);
+    for(size_t i = 1; i <= copy->rows; i++){
+        for(size_t j = 1; j <= copy->colls; j++){
+            if(i == j) det_factor *= *Matrix_at(copy, i, j);
+        } 
+    }
+    return det_factor;
+
+    // Laplace's method, time complexity: O(n!)
     size_t n = mat->rows;
     if(n == 1){
         return *Matrix_at(mat, 1, 1);
@@ -471,23 +538,42 @@ double Matrix_det(Matrix *mat)
     return res;
 }
 
-// Very inefficient!
+// Very inefficient! TODO: to change by solving a system of equations. Now possible with matrix ranking option 
 Matrix *Matrix_inv(Matrix *mat)
 {
     if(!mat){
         return NULL;
     }
     if(mat->rows != mat->colls){
-        Matrix_error("inverse is not define for non square matrixes");
+        MATRIX_ERROR("inverse is not define for non square matrixes");
         return NULL;
     }
     double det = Matrix_det(mat);
     if(det == 0.0){
-        Matrix_error("mathematical error, attempting to invert an invertible matrix");
+        MATRIX_ERROR("mathematical error, attempting to invert an invertible matrix");
         return NULL;
     }
     Matrix* adj = Matrix_adj(mat);
     Matrix* res = Matrix_scale(adj, 1.0 / det);
     Matrix_destroy(adj);
     return res;
+}
+
+// TODO: Consider adding an option to rank for canonical form
+double Matrix_gaussian_elimination(Matrix *mat)
+{
+    if(!mat){
+        return 0.0;
+    }
+    double det_factor = 1.0;
+    for(size_t coll = 1; coll < Matrix_getColls(mat); coll++){
+            for(size_t row = coll+1; row <= Matrix_getRows(mat); row++){
+            if(*Matrix_at(mat, coll, coll) == 0.0 || *Matrix_at(mat, row, coll) == 0.0) continue;
+            double alpha = (*Matrix_at(mat, row, coll) / *Matrix_at(mat, coll, coll));
+            Matrix_scale_row(mat, coll, -alpha);
+            Matrix_add_row_to_row(mat, coll, row);
+            det_factor *= -1 / alpha;
+        }
+    }
+    return det_factor;
 }

@@ -145,6 +145,26 @@ int main(int argc, char* argv[]){
     Matrix_destroy(noise1);
     Matrix_destroy(noise1_inv);
     Matrix_destroy(noise1_again);
+
+    double arr7[] = {
+        1, 2, 3, 4,
+        5, 6, 7, 8,
+        9, 10, 11, 12,
+    };
+    Matrix* m_forSwap = Matrix_create(arr7, 3, 4);
+    Matrix_scale_row(m_forSwap, 1, 5.0);
+    Matrix_swap_rows(m_forSwap, 2, 3);
+    Matrix_add_row_to_row(m_forSwap, 1, 3);
+    MATRIX_DUMP(m_forSwap, NULL);
+    Matrix_destroy(m_forSwap);
+
+    Matrix* m_for_g = Matrix_noise(4, 4, 2.0, 4.0);
+    Matrix* m_for_g_origen = Matrix_copy(m_for_g);
+    MATRIX_DUMP(m_for_g_origen, NULL);
+    Matrix_gaussian_elimination(m_for_g);
+    MATRIX_DUMP(m_for_g, NULL);
+    Matrix_destroy(m_for_g);
+    Matrix_destroy(m_for_g_origen);
     
     return 0;
 }

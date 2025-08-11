@@ -8,11 +8,17 @@
 #include <time.h>
 
 #define MATRIX_DUMP(mat, file) (Matrix_dump(mat, file, #mat))
-
+#define MATRIX_ERROR(msg) do {                                                                    \
+    set_color(COLOR_RED, stderr);                                                                 \
+    fprintf(stderr, "ERROR: %s in function: `%s()` in file: `%s` in line number: %d.\n",         \
+        msg, __func__, __FILE__, __LINE__);                                                       \
+    set_color(COLOR_RESET, stderr);                                                               \
+    exit(1);                                                                                      \
+} while(false)     
+                                  
 typedef struct Matrix_t Matrix;
 
 // Printing and debuging
-void Matrix_error(const char* msg);
 void Matrix_dump(Matrix* mat, FILE* file, const char* name);
 
 // Memory memory management
@@ -35,7 +41,7 @@ Matrix* Matrix_getDig(Matrix* mat);
 // Row operations
 void Matrix_swap_rows(Matrix* mat, size_t i, size_t j);
 void Matrix_scale_row(Matrix* mat, size_t row, double alpha);
-void Matrix_add_row_to_row(Matrix* mat, size_t i, size_t j);
+void Matrix_add_row_to_row(Matrix* mat, size_t from, size_t to);
 
 // Basic operations and arithmetic
 Matrix* Matrix_add(Matrix* a, Matrix* b);
@@ -49,5 +55,6 @@ Matrix* Matrix_minor(Matrix* mat, size_t i, size_t j);
 Matrix* Matrix_adj(Matrix* mat);
 double Matrix_det(Matrix* mat);
 Matrix* Matrix_inv(Matrix* mat);
+double Matrix_gaussian_elimination(Matrix* mat);
 
 #endif // MATRIX_H_
