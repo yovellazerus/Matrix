@@ -513,6 +513,7 @@ double Matrix_det(Matrix *mat)
             if(i == j) det_factor *= *Matrix_at(copy, i, j);
         } 
     }
+    Matrix_destroy(copy);
     return det_factor;
 
     // Laplace's method, time complexity: O(n!)
@@ -568,7 +569,13 @@ double Matrix_gaussian_elimination(Matrix *mat)
     double det_factor = 1.0;
     for(size_t coll = 1; coll < Matrix_getColls(mat); coll++){
             for(size_t row = coll+1; row <= Matrix_getRows(mat); row++){
-            if(*Matrix_at(mat, coll, coll) == 0.0 || *Matrix_at(mat, row, coll) == 0.0) continue;
+            if(*Matrix_at(mat, row, coll) == 0.0) continue;
+            // promotion
+            if(*Matrix_at(mat, coll, coll) == 0.0){
+                Matrix_swap_rows(mat, coll, row);
+                det_factor *= -1;
+                continue;
+            }
             double alpha = (*Matrix_at(mat, row, coll) / *Matrix_at(mat, coll, coll));
             Matrix_scale_row(mat, coll, -alpha);
             Matrix_add_row_to_row(mat, coll, row);

@@ -165,6 +165,16 @@ int main(int argc, char* argv[]){
     MATRIX_DUMP(m_for_g, NULL);
     Matrix_destroy(m_for_g);
     Matrix_destroy(m_for_g_origen);
+
+    double arr_p[] = {
+        0, 1, 2,
+        0, 0, 3,
+        2, 3, 4,
+    };
+    Matrix* mp = Matrix_create(arr_p, 3, 3);
+    Matrix_gaussian_elimination(mp);
+    MATRIX_DUMP(mp, NULL);
+    Matrix_destroy(mp);
     
     return 0;
 }
