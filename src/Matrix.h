@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+#include <math.h>
 
 #define MATRIX_DUMP(mat, file) (Matrix_dump(mat, file, #mat))
 #define MATRIX_ERROR(msg) do {                                                                    \
@@ -15,7 +16,8 @@
     set_color(COLOR_RESET, stderr);                                                               \
     exit(1);                                                                                      \
 } while(false)     
-                                  
+#define INF (1.0/0.0)               
+
 typedef struct Matrix_t Matrix;
 
 // Printing and debuging
@@ -43,6 +45,9 @@ void Matrix_swap_rows(Matrix* mat, size_t i, size_t j);
 void Matrix_scale_row(Matrix* mat, size_t row, double alpha);
 void Matrix_add_row_to_row(Matrix* mat, size_t from, size_t to);
 
+// matrix operations
+void Matrix_scale_self(Matrix* mat, double alpha);
+
 // Basic operations and arithmetic
 Matrix* Matrix_add(Matrix* a, Matrix* b);
 Matrix* Matrix_sub(Matrix* a, Matrix* b);
@@ -50,11 +55,17 @@ Matrix* Matrix_scale(Matrix* mat, double alpha);
 Matrix* Matrix_dot(Matrix* a, Matrix* b);
 Matrix* Matrix_transpose(Matrix* mat);
 Matrix* Matrix_minor(Matrix* mat, size_t i, size_t j);
+double Matrix_frob(Matrix* mat);
 
 // Advanced operations
 Matrix* Matrix_adj(Matrix* mat);
 double Matrix_det(Matrix* mat);
 Matrix* Matrix_inv(Matrix* mat);
 double Matrix_gaussian_elimination(Matrix* mat);
+
+// Eigenvalues and eigenvectors
+double Matrix_smallest_eigenvalue(Matrix* mat);
+double Matrix_greatest_eigenvalue(Matrix* mat);
+Matrix* Matrix_eigenvalues(Matrix* mat, double lambda_min); // TODO: find `lambda_min` using: `Matrix_smallest_eigenvalue` 
 
 #endif // MATRIX_H_

@@ -381,6 +381,18 @@ Matrix *Matrix_scale(Matrix *mat, double alpha)
     return res;
 }
 
+void Matrix_scale_self(Matrix *mat, double alpha)
+{
+    if(!mat){
+        return;
+    }
+    for(int i = 1; i <= mat->rows; i++){
+        for(int j = 1; j <= mat->colls; j++){
+            *Matrix_at(mat, i, j) *= alpha;
+        }
+    }
+}
+
 Matrix *Matrix_dot(Matrix *a, Matrix *b)
 {
     if(!a || !b){
@@ -459,6 +471,20 @@ Matrix *Matrix_minor(Matrix *mat, size_t i, size_t j)
     }
 
     return res;
+}
+
+double Matrix_frob(Matrix *mat)
+{
+    if(!mat){
+        return 0.0;
+    }
+    double res = 0.0;
+    for(int i = 1; i <= mat->rows; i++){
+        for(int j = 1; j <= mat->colls; j++){
+            res += (*Matrix_at(mat, i, j)) * (*Matrix_at(mat, i, j));
+        }
+    }
+    return sqrt(res); // TODO: write myself
 }
 
 Matrix *Matrix_adj(Matrix *mat)
@@ -583,4 +609,181 @@ double Matrix_gaussian_elimination(Matrix *mat)
         }
     }
     return det_factor;
+}
+
+// TODO:not working...
+double Matrix_smallest_eigenvalue(Matrix *mat)
+{
+    if(!mat){
+        return -INF;
+    }
+    if(mat->colls != mat->rows){
+        MATRIX_ERROR("Eigenvalues are not defined for a non-square matrix");
+        return -INF;
+    }
+
+    double mat_det = Matrix_det(mat);
+    Matrix* mat_shifted = NULL;
+
+    if(fabs(mat_det) < 1e-12){  // consider near-singular also
+        double sigma = 1e-3;
+        Matrix* I_sigma = Matrix_scalar(mat->rows, sigma);
+        if(!I_sigma){
+            return -INF;
+        }
+        mat_shifted = Matrix_sub(mat, I_sigma);
+        Matrix_destroy(I_sigma);
+        if(!mat_shifted){
+            return -INF;
+        }
+    } else {
+        mat_shifted = mat;
+    }
+
+    Matrix* mat_inv = Matrix_inv(mat_shifted);
+    if(mat_shifted != mat){
+        Matrix_destroy(mat_shifted); // free only if shifted
+    }
+
+    if(!mat_inv){
+        return -INF;
+    }
+
+    double lambda_min_inv = Matrix_greatest_eigenvalue(mat_inv);
+    Matrix_destroy(mat_inv);
+    if(lambda_min_inv == INF){
+        return -INF;
+    }
+
+    return 1.0 / lambda_min_inv;
+}
+
+double Matrix_greatest_eigenvalue(Matrix *mat)
+{
+    if(!mat){
+        return INF;
+    }
+    if(mat->colls != mat->rows){
+        MATRIX_ERROR("Eigenvalues are not defined for a non-square matrix");
+        return INF;
+    }
+
+    /*
+
+    do max_iterations times:
+    v <- Av / ||Av||
+
+    */
+
+    Matrix* A = mat;
+    size_t max_iterations = 100;
+    Matrix* v = Matrix_noise(mat->rows, 1, -1.0, 1.0); // TODO: `from` and `to` and `max_iterations` need to be generalize
+    for(size_t i = 0; i < 100; i++){
+        Matrix* Av = Matrix_dot(A, v);
+        if(!Av){
+            Matrix_destroy(v);
+            return INF;
+        }
+        double norm = Matrix_frob(Av);
+        Matrix_scale_self(Av, 1.0 / norm);
+        Matrix_destroy(v);
+        v = Av;
+    }
+
+    /*
+    
+    lambda_max = vt_A_v / vt_v
+    
+    */
+
+    if(!v){
+        return INF;
+    }
+    Matrix* vt = Matrix_transpose(v);
+    if(!vt){
+        Matrix_destroy(v);
+        return INF;
+    }
+    double lambda_max = INF;
+    Matrix* Av = Matrix_dot(A, v);
+    if(!Av){
+        Matrix_destroy(v);
+        Matrix_destroy(vt);
+        return INF;
+    }
+    Matrix* vt_A = Matrix_dot(vt, A);
+    if(!vt_A){
+        Matrix_destroy(v);
+        Matrix_destroy(vt);
+        Matrix_destroy(Av);
+        return INF;
+    }
+    Matrix* vt_A_v = Matrix_dot(vt_A, v);
+    if(!vt_A_v){
+        Matrix_destroy(v);
+        Matrix_destroy(vt);
+        Matrix_destroy(Av);
+        Matrix_destroy(vt_A);
+        return INF;
+    }
+    Matrix* vt_v = Matrix_dot(vt, v);
+    if(!vt_v){
+        Matrix_destroy(v);
+        Matrix_destroy(vt);
+        Matrix_destroy(Av);
+        Matrix_destroy(vt_A);
+        Matrix_destroy(vt_A_v);
+        return INF;
+    }
+    lambda_max = (*Matrix_at(vt_A_v, 1, 1) / *Matrix_at(vt_v, 1, 1));
+    Matrix_destroy(v);
+    Matrix_destroy(vt);
+    Matrix_destroy(Av);
+    Matrix_destroy(vt_A);
+    Matrix_destroy(vt_A_v);
+    Matrix_destroy(vt_v);
+    return lambda_max;
+}
+
+Matrix *Matrix_eigenvalues(Matrix *mat, double lambda_min)
+{
+    if(!mat){
+        return NULL;
+    }
+    if(mat->colls != mat->rows){
+        MATRIX_ERROR("Eigenvalues are not defined for a non-square matrix");
+        return NULL;
+    }
+
+    Matrix* res = Matrix_create(NULL, mat->rows, mat->colls);
+    if(!res){
+        return NULL;
+    }
+
+    size_t i = 1;
+    double delta = 1e-3;
+    double from = lambda_min; // Matrix_smallest_eigenvalue(mat) - delta;
+    double to = Matrix_greatest_eigenvalue(mat) + delta;
+    double characteristic_polynomial_val_prev = 0.0;
+    double characteristic_polynomial_val_curr = 0.0;
+    for(double lambda = from; lambda <= to; lambda += delta){
+        Matrix* ILambda = Matrix_scalar(mat->rows, lambda);
+        if(!ILambda){
+            return NULL;
+        }
+        Matrix* A_minus_ILambda = Matrix_sub(mat, ILambda);
+        if(!A_minus_ILambda){
+            Matrix_destroy(ILambda);
+            return NULL;
+        }
+        characteristic_polynomial_val_curr = Matrix_det(A_minus_ILambda);
+        if(characteristic_polynomial_val_prev * characteristic_polynomial_val_curr < 0.0){
+            *Matrix_at(res, i, i) = lambda;
+            i++;
+        }
+        characteristic_polynomial_val_prev = characteristic_polynomial_val_curr;
+        Matrix_destroy(ILambda);
+        Matrix_destroy(A_minus_ILambda);
+    }
+    return res;
 }
