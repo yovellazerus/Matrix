@@ -66,6 +66,6 @@ double Matrix_gaussian_elimination(Matrix* mat);
 // Eigenvalues and eigenvectors
 double Matrix_smallest_eigenvalue(Matrix* mat);
 double Matrix_greatest_eigenvalue(Matrix* mat);
-Matrix* Matrix_eigenvalues(Matrix* mat, double lambda_min); // TODO: find `lambda_min` using: `Matrix_smallest_eigenvalue` 
+Matrix* Matrix_eigenvalues(Matrix* mat); 
 
 #endif // MATRIX_H_

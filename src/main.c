@@ -177,18 +177,18 @@ int main(int argc, char* argv[]){
     Matrix_destroy(mp);
 
     double arr_eig[] = {
-    1, 2, 3, 4,
-    5, 6, 7, 8,
-    9, 10, 11, 12,
-    13, 14, 15, 16,
+    2.0, -1.0,  0.0,  0.0,
+   -1.0,  2.0, -1.0,  0.0,
+    0.0, -1.0,  2.0, -1.0,
+    0.0,  0.0, -1.0,  2.0
 };
     Matrix* m_eig = Matrix_create(arr_eig, 4, 4);
-    Matrix* m_eig_dig = Matrix_eigenvalues(m_eig, -10);
+    Matrix* m_eig_dig = Matrix_eigenvalues(m_eig);
     MATRIX_DUMP(m_eig, NULL);
     MATRIX_DUMP(m_eig_dig, NULL);
     Matrix_destroy(m_eig_dig);
-    // printf("%lf\n", Matrix_greatest_eigenvalue(m_eig));
-    // printf("%lf\n", Matrix_smallest_eigenvalue(m_eig)); // not working
+    printf("%lf\n", Matrix_greatest_eigenvalue(m_eig));
+    printf("%lf\n", Matrix_smallest_eigenvalue(m_eig));
     Matrix_destroy(m_eig);
     
     return 0;

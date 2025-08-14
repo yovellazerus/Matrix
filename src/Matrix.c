@@ -30,17 +30,9 @@ static void set_color(Color color, FILE* file) {
 }
 
 static double randomInRange(double from, double to){
-    if(from >= to){
-        return 0.0;
-    }
-    double seg = (double) rand() / RAND_MAX;
-    if(rand() % 2 == 0){
-        seg *= to;
-    }
-    else{
-        seg *= from;
-    }
-    return seg;
+    if (from >= to) return 0.0;
+    double seg = (double)rand() / RAND_MAX;
+    return from + seg * (to - from); 
 }
 
 struct Matrix_t {
@@ -611,7 +603,6 @@ double Matrix_gaussian_elimination(Matrix *mat)
     return det_factor;
 }
 
-// TODO:not working...
 double Matrix_smallest_eigenvalue(Matrix *mat)
 {
     if(!mat){
@@ -623,39 +614,20 @@ double Matrix_smallest_eigenvalue(Matrix *mat)
     }
 
     double mat_det = Matrix_det(mat);
-    Matrix* mat_shifted = NULL;
-
-    if(fabs(mat_det) < 1e-12){  // consider near-singular also
-        double sigma = 1e-3;
-        Matrix* I_sigma = Matrix_scalar(mat->rows, sigma);
-        if(!I_sigma){
-            return -INF;
-        }
-        mat_shifted = Matrix_sub(mat, I_sigma);
-        Matrix_destroy(I_sigma);
-        if(!mat_shifted){
-            return -INF;
-        }
-    } else {
-        mat_shifted = mat;
+    if(mat_det == 0.0){
+        return -100.0; // TODO: handel det = 0 in a real way...
     }
 
-    Matrix* mat_inv = Matrix_inv(mat_shifted);
-    if(mat_shifted != mat){
-        Matrix_destroy(mat_shifted); // free only if shifted
-    }
-
+    Matrix* mat_inv = Matrix_inv(mat);
     if(!mat_inv){
         return -INF;
     }
+    double res = Matrix_greatest_eigenvalue(mat_inv);
 
-    double lambda_min_inv = Matrix_greatest_eigenvalue(mat_inv);
     Matrix_destroy(mat_inv);
-    if(lambda_min_inv == INF){
-        return -INF;
-    }
 
-    return 1.0 / lambda_min_inv;
+    return 1.0 / res;
+
 }
 
 double Matrix_greatest_eigenvalue(Matrix *mat)
@@ -677,7 +649,7 @@ double Matrix_greatest_eigenvalue(Matrix *mat)
 
     Matrix* A = mat;
     size_t max_iterations = 100;
-    Matrix* v = Matrix_noise(mat->rows, 1, -1.0, 1.0); // TODO: `from` and `to` and `max_iterations` need to be generalize
+    Matrix* v = Matrix_noise(mat->rows, 1, -1.0, 1.0);
     for(size_t i = 0; i < 100; i++){
         Matrix* Av = Matrix_dot(A, v);
         if(!Av){
@@ -745,7 +717,9 @@ double Matrix_greatest_eigenvalue(Matrix *mat)
     return lambda_max;
 }
 
-Matrix *Matrix_eigenvalues(Matrix *mat, double lambda_min)
+
+// TODO: handel det=0 case
+Matrix *Matrix_eigenvalues(Matrix *mat)
 {
     if(!mat){
         return NULL;
@@ -762,7 +736,7 @@ Matrix *Matrix_eigenvalues(Matrix *mat, double lambda_min)
 
     size_t i = 1;
     double delta = 1e-3;
-    double from = lambda_min; // Matrix_smallest_eigenvalue(mat) - delta;
+    double from = Matrix_smallest_eigenvalue(mat) - delta;
     double to = Matrix_greatest_eigenvalue(mat) + delta;
     double characteristic_polynomial_val_prev = 0.0;
     double characteristic_polynomial_val_curr = 0.0;
